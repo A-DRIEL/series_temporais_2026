@@ -7,6 +7,6 @@
 - **Sugestão:** Usar a biblioteca **statsmodels**, mais especificamente **from statsmodels.graphics.tsaplots import plot_acf, plot_pacf**.
 
 ### 2:
-- **Perguntamos:** Ajuda para escrever o código para os gráficos
+- **Perguntamos:** Ajuda para escrever o código para os gráficos.
 - **Sugestão:** Nos forneceu uma função chamada **diagnostico()** que plota os gráficos para as análises.
 
