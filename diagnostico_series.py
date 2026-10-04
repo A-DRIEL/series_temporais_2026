@@ -5,6 +5,14 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller
 
 
+def marcar_sazonais(ax, lags: int) -> None:
+    """Linhas verticais tracejadas nos múltiplos de M (7, 14, ...), com esses valores no eixo x."""
+    sazonais = list(range(M, lags + 1, M))
+    for k in sazonais:
+        ax.axvline(k, color="gray", ls="--", lw=0.8, alpha=0.6, zorder=0)
+    ax.set_xticks([0] + sazonais)
+
+
 def diagnostico(treino: pd.DataFrame) -> None:
     FIG.mkdir(exist_ok=True)
     for s in SERIES:
@@ -17,7 +25,9 @@ def diagnostico(treino: pd.DataFrame) -> None:
         ax1.scatter(zeros.index, zeros.values, color="red", s=15, zorder=3, label="zeros (Natal)")
         ax1.set_title(f"{s} — treino (2011-01-29 a 2016-03-27)")
         ax1.legend(loc="upper left")
-        plot_acf(y, lags=56, ax=fig.add_subplot(2, 2, 3), title=f"ACF — {s}")
+        ax_acf = fig.add_subplot(2, 2, 3)
+        plot_acf(y, lags=56, ax=ax_acf, title=f"ACF — {s}")
+        marcar_sazonais(ax_acf, 56)
         plot_pacf(y, lags=56, ax=fig.add_subplot(2, 2, 4), method="ywm", title=f"PACF — {s}")
         fig.tight_layout()
         fig.savefig(FIG / f"diagnostico_{s}.png", dpi=120)
@@ -27,6 +37,7 @@ def diagnostico(treino: pd.DataFrame) -> None:
         d7 = limpar_natal(y).diff(M).dropna()
         fig, axes = plt.subplots(1, 2, figsize=(12, 4))
         plot_acf(d7, lags=35, ax=axes[0], title=f"ACF de (1-B^7) {s}")
+        marcar_sazonais(axes[0], 35)
         plot_pacf(d7, lags=35, ax=axes[1], method="ywm", title=f"PACF de (1-B^7) {s}")
         fig.tight_layout()
         fig.savefig(FIG / f"acf_pacf_dif7_{s}.png", dpi=120)
