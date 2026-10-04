@@ -12,6 +12,6 @@
 
 
 ### Erros dela:
-Ela estava montando gráficos que não marcavam os valores da sazonalidade, então ajustamos para que fosse desenhado uma linha vertical nos pontos (7,14,....)
+- Os gráficos de ACF/PACF não marcavam os lags sazonais. Ajustamos a função para que os gráficos contivessem linhas verticais em 7, 14, ...
 
 
