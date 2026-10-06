@@ -63,8 +63,22 @@ def plotar_residuos(res, s: str, titulo: str) -> None:
     fig.savefig(FIG / f"sarima_residuos_{s}.png", dpi=120)
     plt.close(fig)
 
+def plotar_previsao(y: pd.Series, y_val: pd.Series, prev, s: str, titulo: str) -> None:
+    """A validação entra só aqui, para desenhar o realizado ao lado da previsão."""
+    ic = prev.conf_int(alpha=0.05)
+    fig, ax = plt.subplots(figsize=(12, 4))
+    ax.plot(y.index[-8 * M:], y.values[-8 * M:], lw=1, color="C0", label="treino (últimas 8 semanas)")
+    ax.plot(y_val.index, y_val.values, lw=1, color="black", label="validação")
+    ax.plot(prev.predicted_mean.index, prev.predicted_mean.values, lw=1.5, color="C1", label="SARIMA")
+    ax.fill_between(ic.index, ic.iloc[:, 0], ic.iloc[:, 1], color="C1", alpha=0.2, label="IC 95%")
+    ax.axvline(TRAIN_END, color="gray", ls="--", lw=0.8)
+    ax.set_title(f"{s} — {titulo}")
+    ax.legend(loc="upper left")
+    fig.tight_layout()
+    fig.savefig(FIG / f"sarima_previsao_{s}.png", dpi=120)
+    plt.close(fig)
 
-def sarima(treino: pd.DataFrame) -> pd.DataFrame:
+def sarima(treino: pd.DataFrame, val: pd.DataFrame) -> pd.DataFrame:
     """Ajusta um SARIMA por série só com o treino e devolve as previsões dos H dias seguintes (formato longo)."""
     FIG.mkdir(exist_ok=True)
     previsoes = []
@@ -72,7 +86,8 @@ def sarima(treino: pd.DataFrame) -> pd.DataFrame:
         ordem, sazonal = ORDENS[s]
         titulo = f"SARIMA{ordem}{sazonal}_{M}"
         res = ajustar(treino[s], ordem, sazonal)
-        yhat = res.forecast(H)
+        prev = res.get_forecast(H)
+        yhat = prev.predicted_mean
         assert yhat.index.min() > TRAIN_END and len(yhat) == H
 
         lb = ljung_box(res, ordem, sazonal)
@@ -81,7 +96,9 @@ def sarima(treino: pd.DataFrame) -> pd.DataFrame:
         print(f"         {coefs}")
 
         plotar_residuos(res, s, titulo)
+        plotar_previsao(treino[s], val[s], prev, s, titulo)
         previsoes.append(pd.DataFrame({"date": yhat.index, "series": s, "modelo": "sarima", "yhat": yhat.values}))
     return pd.concat(previsoes, ignore_index=True)
+
 
 

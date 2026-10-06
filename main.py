@@ -10,7 +10,7 @@ def main() -> None:
     treino, val = carregar()
     diagnostico(treino)
     comparar_ordens(treino)
-    previsoes = pd.concat([sarima(treino)], ignore_index=True)
+    previsoes = pd.concat([sarima(treino, val)], ignore_index=True)
     previsoes.to_csv(ROOT / "previsoes_validacao.csv", index=False)
 
 
