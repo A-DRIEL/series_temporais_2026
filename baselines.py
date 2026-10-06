@@ -9,12 +9,12 @@ def plotar_previsoes_baselines(y_train, y_val, preds, s):
     fig, ax = plt.subplots(figsize=(12, 5))
     ax.plot(y_train.index[-8 * M:], y_train.values[-8 * M:], lw=1, color="C0", label="treino")
     ax.plot(y_val.index, y_val.values, lw=1.5, color="black", label="validação (real)")
-    
+
     estilos = {
-        "media": {"color": "gray", "ls": "--"},
-        "naive": {"color": "orange", "ls": "--"},
-        "naive_sazonal": {"color": "red", "ls": "-"},
-        "drift": {"color": "green", "ls": "-."}
+        "media": {"color": "#F7A72F", "ls": "--"},
+        "naive": {"color": "#CE1818", "ls": "--"},
+        "naive_sazonal": {"color": "#38BC1E", "ls": "-"},
+        "drift": {"color": "#952BB2", "ls": "-."}
     }
     
     for nome_modelo, y_hat in preds.items():

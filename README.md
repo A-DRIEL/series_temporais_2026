@@ -39,6 +39,20 @@ python main.py
     - não há ciclo mensal.
 - **Outliers:** os zeros de Natal, um pico de $\sim 950$ no fim de 2014 e quedas para $\sim 150$ no fim de novembro de 2015.
 
+
+## Baselines 
+
+As quatro baselines exigidas (média, naive, naive sazonal e drift) foram calculadas para o horizonte de validação (28 dias) e estão consolidadas no arquivo `previsoes_validacao.csv`. 
+
+Analisando o comportamento das previsões geradas (`figuras/baselines_previsao_*.png`), os principais resultados observados foram:
+
+- **Naive Sazonal ($m=7$):** Como as três séries apresentam forte sazonalidade semanal, este foi, de longe, o baseline que apresentou o melhor resultado visual. Ele conseguiu reproduzir fielmente os ciclos de dias da semana (como os picos de fim de semana), acompanhando bem de perto a série de validação real.
+
+- **Média, Naive e Drift:** Por serem métodos que não incorporam o componente sazonal, geraram apenas projeções retilíneas (retas horizontais ou com leve inclinação). Visualmente, eles "cortam" a série no meio, falhando em capturar a variação diária. 
+
+Esses resultados mostram que a sazonalidade é o fator predominante das séries.
+
+
 ## ARIMA/SARIMA
 
 O código está em `sarima.py`. O ajuste usa só o treino (até 2016-03-27), com os $5$ zeros de Natal interpolados, e a previsão cobre os $28$ dias da validação. Nenhuma covariável foi usada.
