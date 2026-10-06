@@ -40,6 +40,10 @@ python main.py
 - **Outliers:** os zeros de Natal, um pico de $\sim 950$ no fim de 2014 e quedas para $\sim 150$ no fim de novembro de 2015.
 
 
+## Métricas de validação
+
+Ao executar `python main.py`, o projeto também grava `metricas.csv` com MAE, RMSE e MASE para cada modelo (média, naive, naive sazonal, drift e SARIMA) e cada série. As métricas são calculadas nos 28 dias de validação. A escala do MASE é o MAE in-sample do naive sazonal semanal no treino, isto é, a média de `|y[t] - y[t-7]|` para todos os pares disponíveis no treino.
+
 ## Baselines 
 
 As quatro baselines exigidas (média, naive, naive sazonal e drift) foram calculadas para o horizonte de validação (28 dias) e estão consolidadas no arquivo `previsoes_validacao.csv`. 
