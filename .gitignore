@@ -1,1 +1,4 @@
 enunciado/projeto-task1/enunciado.*
+
+__pycache__/
+.venv/
