@@ -3,6 +3,7 @@
 Para rodar:
 
 ```shell
+python -m pip install -r requirements.txt
 python main.py
 ```
 
@@ -37,3 +38,41 @@ python main.py
     - na parte não sazonal há só um efeito pequeno na defasagem $1$ ($\approx 0{,}2$);
     - não há ciclo mensal.
 - **Outliers:** os zeros de Natal, um pico de $\sim 950$ no fim de 2014 e quedas para $\sim 150$ no fim de novembro de 2015.
+
+## ARIMA/SARIMA
+
+O código está em `sarima.py`. O ajuste usa só o treino (até 2016-03-27), com os $5$ zeros de Natal interpolados, e a previsão cobre os $28$ dias da validação. Nenhuma covariável foi usada.
+
+### Como as ordens foram escolhidas
+
+1. **Diferenciação.** A ACF no nível tem picos de $\sim 0{,}8$ em $7, 14, \dots$ que quase não caem, então usamos $D = 1$ com $m = 7$ nas três séries. Depois de $(1 - B^7)$ o ADF rejeita raiz unitária nas três ($p < 10^{-26}$).
+2. **Ponto de partida pela ACF/PACF de $(1 - B^7)y$.** Pico isolado na defasagem $7$ da ACF e PACF caindo em $7, 14, 21, 28$ dão $Q = 1$ e $P = 0$. Nas defasagens baixas, a ACF cai aos poucos e a PACF corta na $1$, o que dá $p = 1$. O ponto de partida é o $\text{SARIMA}(1,0,0)(0,1,1)_7$.
+3. **Refino por AIC/BIC no treino**, comparando com modelos vizinhos (a tabela é impressa pelo `main.py`):
+
+| Modelo | store_total (AIC / BIC) | FOODS (AIC / BIC) | HOBBIES (AIC / BIC) |
+|---|---|---|---|
+| $(1,0,0)(0,1,1)_7$ | $27773{,}9$ / $27790{,}6$ | $26692{,}7$ / $26709{,}3$ | $22062{,}4$ / $22079{,}0$ |
+| $(1,0,1)(0,1,1)_7$ | $\mathbf{27761{,}4}$ / $\mathbf{27783{,}5}$ | $\mathbf{26678{,}1}$ / $\mathbf{26700{,}3}$ | $22020{,}8$ / $22043{,}0$ |
+| $(2,0,0)(0,1,1)_7$ | $27763{,}3$ / $27785{,}4$ | $26680{,}6$ / $26702{,}7$ | $22041{,}9$ / $22064{,}1$ |
+| $(1,0,1)(1,1,1)_7$ | $27763{,}4$ / $27791{,}1$ | $26679{,}9$ / $26707{,}5$ | $22018{,}7$ / $22046{,}4$ |
+| $(0,1,1)(0,1,1)_7$ | $27907{,}4$ / $27924{,}0$ | $26891{,}8$ / $26908{,}4$ | $22032{,}9$ / $22049{,}5$ |
+| $(1,1,1)(0,1,1)_7$ | $27769{,}0$ / $27791{,}1$ | $26692{,}4$ / $26714{,}5$ | $\mathbf{21996{,}5}$ / $\mathbf{22018{,}7}$ |
+
+### Modelos escolhidos
+
+| Série | Modelo | $\phi_1$ | $\theta_1$ | $\Theta_1$ |
+|---|---|---|---|---|
+| store_total | $\text{SARIMA}(1,0,1)(0,1,1)_7$ | $0{,}622$ | $-0{,}207$ | $-0{,}850$ |
+| FOODS | $\text{SARIMA}(1,0,1)(0,1,1)_7$ | $0{,}678$ | $-0{,}186$ | $-0{,}860$ |
+| HOBBIES | $\text{SARIMA}(1,1,1)(0,1,1)_7$ | $0{,}159$ | $-0{,}947$ | $-0{,}999$ |
+
+- **store_total e FOODS:** acrescentar um $\text{MA}(1)$ ao ponto de partida reduz AIC e BIC. O $\text{AR}$ sazonal ($P = 1$) piora os dois critérios. Não usamos $d = 1$ porque o $(1,1,1)(0,1,1)_7$ tem BIC maior e a série, depois da diferença sazonal, já é estacionária.
+- **HOBBIES:** é a única série em que os modelos com $d = 1$ ganham dos com $d = 0$, o que combina com a quebra de nível de 2013 vista no diagnóstico. O $(1,1,1)(0,1,1)_7$ tem o menor AIC e BIC. O $\Theta_1 \approx -1$ fica na fronteira de invertibilidade: é o que o diagnóstico já indicava, uma sazonalidade semanal quase determinística.
+
+### Resíduos
+
+As figuras `figuras/sarima_residuos_*.png` mostram os resíduos e suas ACF/PACF. O Ljung-Box rejeita ruído branco nas três séries ($p \le 0{,}002$ em store_total, $p < 0{,}001$ em FOODS e $p = 0{,}022$ / $0{,}005$ nas defasagens $14$ / $28$ em HOBBIES), então os modelos não estão totalmente adequados. Em store_total e FOODS o que sobra é a autocorrelação nas defasagens $29\text{–}32$ (até $\sim 0{,}16$), o ciclo mensal já apontado no diagnóstico. Um SARIMA com $m = 7$ e sem regressores não consegue capturar esse ciclo. Em HOBBIES as autocorrelações que sobram são pequenas ($|\rho| < 0{,}07$) e sem padrão.
+
+### Previsão
+
+As figuras `figuras/sarima_previsao_*.png` mostram a previsão dos $28$ dias com intervalo de $95\%$ ao lado do realizado. As previsões são gravadas em `previsoes_validacao.csv` com `modelo = sarima`.
