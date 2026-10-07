@@ -94,3 +94,42 @@ As figuras `figuras/sarima_residuos_*.png` mostram os resíduos e suas ACF/PACF.
 ### Previsão
 
 As figuras `figuras/sarima_previsao_*.png` mostram a previsão dos $28$ dias com intervalo de $95\%$ ao lado do realizado. As previsões são gravadas em `previsoes_validacao.csv` com `modelo = sarima`.
+
+
+## Comparação do modelo complexo com os quatro baselines
+
+O modelo mais complexo, o **SARIMA**, foi comparado com os quatro baselines (média, naive, naive sazonal com m = 7 e drift) no mesmo split, no horizonte de validação de 28 dias (2016-03-28 a 2016-04-24). As métricas estão em `metricas.csv`.
+
+### Redução do erro do SARIMA frente a cada baseline
+
+| Série | Métrica | vs. média | vs. naive | vs. naive sazonal | vs. drift |
+|---|---|---:|---:|---:|---:|
+| store_total | MAE | −61,1% | −63,3% | −31,1% | −63,3% |
+| store_total | RMSE | −64,3% | −59,0% | −39,5% | −59,0% |
+| FOODS | MAE | −57,7% | −66,4% | −35,1% | −66,4% |
+| FOODS | RMSE | −59,9% | −62,7% | −35,9% | −62,7% |
+| HOBBIES | MAE | −33,3% | −56,2% | −27,6% | −56,6% |
+| HOBBIES | RMSE | −32,5% | −53,4% | −35,0% | −53,7% |
+
+### Resultado geral
+
+O SARIMA obteve o menor MAE, RMSE e MASE nas três séries. Ele não perdeu para nenhum baseline, incluindo a média e o naive sazonal, que são os mais relevantes por serem os mais competitivos neste problema.
+
+### Contra o naive sazonal
+
+O naive sazonal é o melhor baseline em `store_total` e `FOODS`, e o SARIMA o supera com folga: o MAE cai 31,1% em `store_total` e 35,1% em `FOODS`. Em `HOBBIES` a vantagem é menor (−27,6% no MAE).
+
+O MASE do naive sazonal fica em torno de 1 (1,06 / 1,01 / 1,12), ou seja, na validação ele erra aproximadamente o mesmo que errou in-sample, que é o esperado para a escala usada. O SARIMA fica abaixo de 1 nas três séries (0,73 / 0,65 / 0,81), isto é, erra menos do que o naive sazonal errou no treino.
+
+### Contra média, naive e drift
+
+Esses três são claramente piores. O naive e o drift têm desempenho bem semelhante (MASE ≈ 1,85–1,98), porque a inclinação do drift estimada no treino é muito pequena e a previsão praticamente repete o último valor, sem capturar o padrão semanal. A média também ignora a sazonalidade e erra mais que o naive sazonal em `store_total` e `FOODS`.
+
+### Outras observações:
+
+1. **HOBBIES é o caso mais apertado.** Nessa série o ganho do SARIMA é o menor e, no RMSE, a *média* (141,3) supera o naive sazonal (146,7), embora o naive sazonal ganhe da média no MAE (102,3 vs. 111,0). Isso sugere que a série é ruidosa, com erros grandes pontuais que o naive sazonal replica ao copiar a semana anterior, e que o sinal sazonal semanal é mais fraco aqui do que nas outras séries.
+2. **Complexidade.** O SARIMA exige identificação de ordem e ajuste, enquanto o naive sazonal não tem parâmetros. Em `HOBBIES` o ganho absoluto é pequeno (≈ 28 unidades de MAE), e o custo de complexidade pode pesar mais.
+
+### Conclusão
+
+Nas três séries, o ganho do SARIMA sobre o naive sazonal é consistente em MAE, RMSE e MASE, o que justifica o uso do modelo, com a cautela acima para `HOBBIES`.
