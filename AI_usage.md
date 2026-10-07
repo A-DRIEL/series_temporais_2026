@@ -10,6 +10,12 @@
 - **Perguntamos:** Ajuda para escrever o código para os gráficos.
 - **Sugestão:** Nos forneceu uma função chamada **diagnostico()** que plota os gráficos para as análises.
 
+## Parte da comparação do SARIMA:
+
+- **Perguntamos:** Correção e sugestões de melhoria para o texto.
+- **Sugestão:** Nos forneceu o texto corrigido e algumas sugestões para melhorá-lo, como a inclusão da tabela com o percentual de decrescimento do SARIMA em relação às baselines.
+
+
 
 ### Erros dela:
 - Os gráficos de ACF/PACF não marcavam os lags sazonais. Ajustamos a função para que os gráficos contivessem linhas verticais em 7, 14, ...
