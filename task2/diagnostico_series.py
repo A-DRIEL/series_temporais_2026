@@ -1,5 +1,6 @@
+import pandas as pd
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from config import *
+from config import FIG, M, SERIES
 from carregar import limpar_natal
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller

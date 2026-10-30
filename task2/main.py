@@ -1,20 +1,37 @@
+import argparse
 import warnings
 
-from carregar import *
-from diagnostico_series import * 
-from sarima import *
-from baselines import *
+import pandas as pd
+
+from baselines import calcular_baselines
+from carregar import carregar, carregar_task1
+from config import PREVISOES
+from diagnostico_series import diagnostico
 from metricas import salvar_metricas
+from sarima import comparar_ordens, sarima
 
 warnings.filterwarnings("ignore")
 
-def main() -> None:
-    treino, val = carregar()
-    diagnostico(treino)
-    comparar_ordens(treino)
 
-    previsoes = pd.concat([calcular_baselines(treino, val), sarima(treino, val)], ignore_index=True)
-    previsoes.to_csv(ROOT / "previsoes_validacao.csv", index=False)
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Reproduz previsoes_validacao.csv e metricas.csv.")
+    parser.add_argument(
+        "--refazer-task1",
+        action="store_true",
+        help="refaz diagnóstico, baselines e SARIMA a partir de dados/ (sobrescreve as linhas entregues na Task 1)",
+    )
+    args = parser.parse_args()
+
+    treino, val = carregar()
+    if args.refazer_task1:
+        diagnostico(treino)
+        comparar_ordens(treino)
+        task1 = pd.concat([calcular_baselines(treino, val), sarima(treino, val)], ignore_index=True)
+    else:
+        task1 = carregar_task1()
+
+    previsoes = pd.concat([task1], ignore_index=True)
+    previsoes.to_csv(PREVISOES, index=False)
     metricas = salvar_metricas(treino, val, previsoes)
     print("\nMétricas na validação (menor é melhor):")
     for serie, grupo in metricas.groupby("series", sort=False):

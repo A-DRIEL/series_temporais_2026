@@ -1,7 +1,8 @@
+import pandas as pd
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from config import *
+from config import FIG, H, M, SERIES, TRAIN_END
 from carregar import limpar_natal
 from diagnostico_series import marcar_sazonais
 import matplotlib.pyplot as plt
