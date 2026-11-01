@@ -12,6 +12,13 @@ def carregar() -> tuple[pd.DataFrame, pd.DataFrame]:
     return treino, val
 
 
+def carregar_covariaveis() -> pd.DataFrame:
+    """SNAP, eventos e preço semanal, de 2011-01-29 a 2016-05-22 (já conhecidos na origem)."""
+    cov = pd.read_csv(DADOS / "covariaveis.csv", parse_dates=["date"], index_col="date").asfreq("D")
+    assert cov.index.max() >= TRAIN_END + pd.Timedelta(days=H)
+    return cov
+
+
 def carregar_task1() -> pd.DataFrame:
     """Linhas da Task 1 (baselines e SARIMA) exatamente como foram entregues em previsoes_validacao.csv.
 
