@@ -44,6 +44,9 @@ O grupo revisou, executou e entendeu todo o código e o texto entregues, e respo
 1. "Leia os arquivos, o projeto e os enunciados para se ambientar e entender o que precisamos fazer."
 2. "Antes, você sugere que alteremos alguma coisa que herdamos da task1 para melhorar?"
 3. "Vamos fazer o modelo linear". A IA perguntou a regressão, a estratégia e as features; escolhemos OLS e a estratégia direta com lags ≥ 28, e pedimos a recomendação de features.
+4. "Now I want you to build a function boosting(train, val, cov) which fits a boosting model in this dataset, its a time series data type, so dont shuffle the datapoints." A IA montou a função "boosting()". 
+
+
 
 ## Erros da IA que o grupo corrigiu
 - **Linhas da Task 1 reescritas.** Para testar a reprodutibilidade, a IA rodou o `main.py`, que reajustava o SARIMA e sobrescreveu o `previsoes_validacao.csv`, o `metricas.csv` e as figuras entregues; o refit mudava o `yhat` do SARIMA na terceira casa decimal. Restauramos os arquivos pelo git e mudamos o `main.py` para reaproveitar as linhas entregues da Task 1. O refit ficou atrás de `--refazer-task1`.

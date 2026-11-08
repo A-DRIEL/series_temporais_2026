@@ -1,15 +1,22 @@
 import argparse
 import warnings
 
+import matplotlib
+
+matplotlib.use("Agg") 
+
 import pandas as pd
 
 from baselines import calcular_baselines
+from boosting import boosting
 from carregar import carregar, carregar_covariaveis, carregar_task1
 from config import PREVISOES
 from diagnostico_series import diagnostico
 from linear import linear
 from metricas import salvar_metricas
 from sarima import comparar_ordens, sarima
+
+
 
 warnings.filterwarnings("ignore")
 
@@ -32,7 +39,8 @@ def main() -> None:
     else:
         task1 = carregar_task1()
 
-    previsoes = pd.concat([task1, linear(treino, val, cov)], ignore_index=True)
+    previsoes = pd.concat([task1, linear(treino, val, cov), boosting(treino, val, cov)], ignore_index=True)
+
     previsoes.to_csv(PREVISOES, index=False)
     metricas = salvar_metricas(treino, val, previsoes)
     print("\nMétricas na validação (menor é melhor):")
