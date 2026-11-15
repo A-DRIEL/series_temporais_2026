@@ -9,10 +9,10 @@ python main.py
 
 O `main.py` reaproveita as linhas da Task 1 (média, naive, naive sazonal, drift e SARIMA) exatamente como foram entregues em `previsoes_validacao.csv`, ajusta os modelos da Task 2 e regrava `previsoes_validacao.csv` e `metricas.csv`. Para refazer também o diagnóstico, os baselines e o SARIMA a partir de `dados/`, use `python main.py --refazer-task1`. O refit do SARIMA pode mudar o `yhat` na terceira casa decimal, conforme a versão do statsmodels.
 
-Check público da Task 2:
+Check público da Task 2 (padrão `--ate rede`; aceita `--ate linear` ou `--ate arvore`):
 
 ```shell
-python checks/check_task2.py --submission . --ate linear
+python checks/check_task2.py --submission .
 ```
 
 # Task 1
@@ -148,7 +148,7 @@ Nas três séries, o ganho do SARIMA sobre o naive sazonal é consistente em MAE
 
 ## Estratégia e features
 
-O código está em `features.py`, que monta a tabela usada por todas as classes da Task 2, e em `linear.py`. Usamos a estratégia **direta**: um único modelo por série prevê os 28 dias, e toda coluna que depende de y usa defasagem de **28 dias ou mais**. Assim, o lag de qualquer dia da validação cai dentro do treino. No código, a série usada para os lags é o treino seguido de 28 `NaN` nas datas da validação, e um `assert` exige que a matriz da validação não tenha `NaN`. Se algum lag tocasse a validação, a execução pararia. O y da validação só é lido para desenhar o gráfico e calcular as métricas.
+O código está em `features.py`, que monta a tabela usada por todas as classes da Task 2 (`linear.py`, `boosting.py` e `rede.py`), e em `residuos.py`, que faz o diagnóstico dos resíduos no treino. Usamos a estratégia **direta**: um único modelo por série prevê os 28 dias, e toda coluna que depende de y usa defasagem de **28 dias ou mais**. Assim, o lag de qualquer dia da validação cai dentro do treino. No código, a série usada para os lags é o treino seguido de 28 `NaN` nas datas da validação, e um `assert` exige que a matriz da validação não tenha `NaN`. Se algum lag tocasse a validação, a execução pararia. O y da validação só é lido para desenhar o gráfico e calcular as métricas.
 
 Cada série tem o próprio ajuste: `store_total`, `FOODS` e `HOBBIES` nunca estão na mesma tabela.
 
@@ -191,3 +191,75 @@ Usamos regressão linear por mínimos quadrados (OLS, `sklearn.linear_model.Line
 - **Contra o SARIMA, em store_total e FOODS.** O linear ganha com folga, reduzindo o MAE em 37% e 45%. O SARIMA com $m = 7$ e sem regressores não enxerga o ciclo mensal; o linear recebe o SNAP, que pesa mais em alimentos, e o nível recente pelos lags.
 - **Em HOBBIES.** O linear perde para o SARIMA no MAE e no MASE (+2,1%) e ganha no RMSE (−6,5%), ou seja, erra menos nos dias de erro grande.
 - **O que muda em HOBBIES em relação a FOODS.** HOBBIES usa as mesmas colunas, mas com ajuste próprio e o preço da própria categoria. A série tem mais ruído e não tem ciclo mensal (diagnóstico da Task 1), então o SNAP ajuda pouco e o R² no treino é bem menor ($0{,}54$). O ganho do linear aqui vem quase todo do padrão semanal e do nível, que o SARIMA já capturava.
+- **Resíduos no treino (`figuras/linear_residuos_*.png`).** Os resíduos têm média zero nas três séries e desvio padrão de $373{,}4$ (`store_total`), $298{,}7$ (`FOODS`) e $83{,}0$ (`HOBBIES`). O teste de Ljung-Box rejeita ruído branco nas defasagens $14$ e $28$ ($p < 10^{-75}$ nas três séries), com ACF no lag $1$ de $\sim 0{,}36$ (`store_total`), $\sim 0{,}45$ (`FOODS`) e $\sim 0{,}24$ (`HOBBIES`). Isso é esperado na **estratégia direta** para $H = 28$: como o modelo só recebe lags $\ge 28$ dias (sem $y_{t-1}, \dots, y_{t-7}$), choques locais de uma semana para a seguinte permanecem correlacionados nos resíduos in-sample. Em compensação, a elevação mensal em torno das defasagens $28\text{–}32$ que aparecia nos resíduos do SARIMA cai bastante, já que o linear incorpora o `snap_CA` e as dummies de mês.
+
+## `boosting`
+
+O código está em `boosting.py`. Usamos *gradient boosting* de árvores baseado em histogramas (`sklearn.ensemble.HistGradientBoostingRegressor`), ajustado separadamente para cada série sobre a mesma matriz de features de `features.py` (estratégia direta, lags $\ge 28$ e padronização com média e desvio exclusivos do treino).
+
+### Decisões e hiperparâmetros
+
+- **Hiperparâmetros fixados a priori:** mantivemos os valores padrão da biblioteca (`learning_rate = 0.1`, `max_iter = 100`, `max_leaf_nodes = 31`, `min_samples_leaf = 20`, perda quadrática), fixando `early_stopping=False` e `random_state=0`. Nenhum hiperparâmetro foi escolhido ou ajustado olhando o erro da validação. Desligar o `early_stopping` evita que o estimador separe internamente uma fração aleatória (embaralhada) do treino para parada antecipada.
+- **Ajuste e resíduos no treino (`figuras/boosting_residuos_*.png`):** por capturar interações não lineares entre dia da semana, mês, SNAP, eventos, preço e lags, o ajuste in-sample sobe para $R^2 = 0{,}953$ em `store_total` (desvio dos resíduos de $213{,}7$), $R^2 = 0{,}946$ em `FOODS` (desvio de $162{,}3$) e $R^2 = 0{,}855$ em `HOBBIES` (desvio de $46{,}7$). Na ACF/PACF dos resíduos, a autocorrelação residual cai drasticamente em relação ao modelo linear: o lag $1$ recua para $\sim 0{,}14$ (`store_total`), $\sim 0{,}17$ (`FOODS`) e $\sim 0{,}07$ (`HOBBIES`), e os múltiplos sazonais ($7, 14, 21$) ficam quase todos dentro da banda de confiança (embora o Ljung-Box ainda rejeite ruído branco a $5\%$, com $p(14) = 5{,}4 \times 10^{-11}$ em `store_total`, $1{,}9 \times 10^{-10}$ em `FOODS` e $0{,}0015$ em `HOBBIES`).
+
+### Resultados na validação
+
+As figuras `figuras/boosting_previsao_*.png` mostram a previsão dos $28$ dias ao lado do realizado.
+
+| Série | Métrica | boosting | naive sazonal | SARIMA | linear | vs. naive sazonal | vs. SARIMA | vs. linear |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| store_total | MAE | **195,5** | 459,2 | 316,6 | 200,3 | −57,4% | −38,2% | −2,4% |
+| store_total | RMSE | 258,3 | 655,5 | 396,5 | **241,3** | −60,6% | −34,9% | +7,0% |
+| store_total | MASE | **0,449** | 1,056 | 0,728 | 0,460 | −57,4% | −38,2% | −2,4% |
+| FOODS | MAE | 175,6 | 343,9 | 223,1 | **122,0** | −48,9% | −21,3% | +44,0% |
+| FOODS | RMSE | 209,9 | 420,1 | 269,5 | **149,2** | −50,0% | −22,1% | +40,6% |
+| FOODS | MASE | 0,513 | 1,005 | 0,652 | **0,357** | −48,9% | −21,3% | +44,0% |
+| HOBBIES | MAE | 86,9 | 102,3 | **74,0** | 75,6 | −15,0% | **+17,4%** | +15,0% |
+| HOBBIES | RMSE | 105,4 | 146,7 | 95,4 | **89,1** | −28,1% | **+10,6%** | +18,3% |
+| HOBBIES | MASE | 0,951 | 1,120 | **0,810** | 0,827 | −15,0% | **+17,4%** | +15,0% |
+
+- **Contra o naive sazonal.** O `boosting` **não perde** em nenhuma série nem métrica (reduz o MAE em $57{,}4\%$ em `store_total`, $48{,}9\%$ em `FOODS` e $15{,}0\%$ em `HOBBIES`).
+- **Em `store_total`.** O `boosting` alcança o **menor MAE ($195{,}5$) e MASE ($0{,}449$) entre todos os modelos do trabalho**, superando com folga o SARIMA (−38,2%) e batendo levemente o `linear` (−2,4% em MAE/MASE, mas com RMSE 7,0% maior). Na série agregada da loja, a combinação não linear entre calendário, SNAP e nível recente ajuda a acertar os picos de fim de semana do início do mês.
+- **Em `FOODS`.** Supera com folga o naive sazonal (−48,9% no MAE) e o SARIMA (−21,3% no MAE), mas fica atrás do `linear` (+44,0% no MAE). Como a dinâmica de `FOODS` é fortemente aditiva nos efeitos de dia da semana e SNAP, a flexibilidade das $100$ árvores com até $31$ folhas sobreajusta parte das oscilações do treino ($R^2 = 0{,}946$ vs. $0{,}817$ no linear).
+- **O que muda em `HOBBIES` em relação a `FOODS`.** Com ajuste próprio e `preco_HOBBIES`, o `boosting` ganha do naive sazonal nas três métricas, mas **perde para o SARIMA** (+17,4% no MAE e +10,6% no RMSE) e para o `linear` (+15,0% no MAE). Em `HOBBIES` a razão sinal-ruído é baixa e não há ciclo mensal de SNAP; ao subir o $R^2$ de treino de $0{,}541$ (linear) para $0{,}855$, a árvore memoriza ruído específico do histórico e generaliza pior nos $28$ dias de validação.
+
+## `rede`
+
+O código está em `rede.py`. Usamos uma rede neural *Perceptron Multicamadas* (`sklearn.neural_network.MLPRegressor`), ajustada separadamente para cada série sobre a mesma matriz de features de `features.py` (estratégia direta, onde tanto o alvo quanto os lags e o preço já estão padronizados com média e desvio exclusivos do treino).
+
+### Decisões e hiperparâmetros
+
+- **Arquitetura e regularização fixadas a priori:** duas camadas ocultas com `hidden_layer_sizes = (32, 16)`, função de ativação `relu`, penalização L2 `alpha = 1e-2`, `max_iter = 500` e `early_stopping = False`. Como a matriz de entrada tem $26$ colunas, a arquitetura em funil $(26 \to 32 \to 16 \to 1)$ tem capacidade moderada e usa regularização L2 para conter pesos grandes sem consultar a validação.
+- **Média de $5$ sementes (`SEMENTES = [0, 1, 2, 3, 4]`):** como o treinamento da MLP depende da inicialização aleatória dos pesos e da otimização estocástica (Adam), treinamos $5$ redes independentes com sementes fixadas a priori e tomamos a média das previsões no treino e na validação, reduzindo a variância do preditor.
+- **Ajuste e resíduos no treino (`figuras/rede_residuos_*.png`):** o $R^2$ no treino é $0{,}950$ em `store_total` (desvio dos resíduos de $219{,}5$), $0{,}939$ em `FOODS` (desvio de $172{,}4$) e $0{,}858$ em `HOBBIES` (desvio de $46{,}1$). Assim como no linear e no boosting, o Ljung-Box rejeita ruído branco nas defasagens $14$ e $28$ ($p < 10^{-6}$ nas três séries) por conta da autocorrelação de curto prazo no lag $1$ ($\sim 0{,}31$ em `store_total`, $\sim 0{,}37$ em `FOODS` e $\sim 0{,}10$ em `HOBBIES`), inerente ao horizonte direto de $28$ dias sem lags curtos.
+
+### Resultados na validação
+
+As figuras `figuras/rede_previsao_*.png` mostram a previsão da MLP ao lado do realizado.
+
+| Série | Métrica | rede | naive sazonal | SARIMA | linear | boosting | vs. naive sazonal | vs. SARIMA |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| store_total | MAE | 240,7 | 459,2 | 316,6 | 200,3 | **195,5** | −47,6% | −24,0% |
+| store_total | RMSE | 297,9 | 655,5 | 396,5 | **241,3** | 258,3 | −54,6% | −24,9% |
+| store_total | MASE | 0,553 | 1,056 | 0,728 | 0,460 | **0,449** | −47,6% | −24,0% |
+| FOODS | MAE | 172,4 | 343,9 | 223,1 | **122,0** | 175,6 | −49,9% | −22,7% |
+| FOODS | RMSE | 216,1 | 420,1 | 269,5 | **149,2** | 209,9 | −48,6% | −19,8% |
+| FOODS | MASE | 0,504 | 1,005 | 0,652 | **0,357** | 0,513 | −49,9% | −22,7% |
+| HOBBIES | MAE | 88,5 | 102,3 | **74,0** | 75,6 | 86,9 | −13,5% | **+19,6%** |
+| HOBBIES | RMSE | 102,7 | 146,7 | 95,4 | **89,1** | 105,4 | −30,0% | **+7,7%** |
+| HOBBIES | MASE | 0,969 | 1,120 | **0,810** | 0,827 | 0,951 | −13,5% | **+19,6%** |
+
+- **Contra o naive sazonal.** A `rede` **não perde** em nenhuma série nem métrica (reduz o MAE em $47{,}6\%$ em `store_total`, $49{,}9\%$ em `FOODS` e $13{,}5\%$ em `HOBBIES`).
+- **Contra o SARIMA, em `store_total` e `FOODS`.** A `rede` supera o SARIMA com folga nas duas séries (−24,0% e −22,7% no MAE; −24,9% e −19,8% no RMSE), beneficiando-se das covariáveis de calendário e SNAP que o SARIMA univariado não possui. Em `FOODS`, a `rede` também supera ligeiramente o `boosting` no MAE ($172{,}4$ vs. $175{,}6$) e no MASE ($0{,}504$ vs. $0{,}513$), ficando atrás apenas do `linear`.
+- **O que muda em `HOBBIES` em relação a `FOODS`.** Em `HOBBIES` (ajustada separadamente com `preco_HOBBIES`), a `rede` supera o naive sazonal nas três métricas, tem RMSE ligeiramente menor que o `boosting` ($102{,}7$ vs. $105{,}4$), mas **perde para o SARIMA** (+19,6% no MAE e +7,7% no RMSE) e para o `linear`. Pelo mesmo motivo observado no `boosting`, a série de `HOBBIES` é mais ruidosa, sofreu quebra estrutural em 2013 e quase não responde a SNAP/eventos; modelos não lineares com maior número de parâmetros ($R^2 = 0{,}858$ no treino) acabam sobreajustando variações idiossincráticas do treino.
+
+## Resumo comparativo da Task 2
+
+| Série | Melhor MAE / MASE | Melhor RMSE | Perdeu para o `naive_sazonal`? | Perdeu para o `SARIMA`? |
+|---|---|---|---|---|
+| `store_total` | `boosting` ($195{,}5$ / $0{,}449$) | `linear` ($241{,}3$) | Nenhum modelo | Nenhum modelo |
+| `FOODS` | `linear` ($122{,}0$ / $0{,}357$) | `linear` ($149{,}2$) | Nenhum modelo | Nenhum modelo |
+| `HOBBIES` | `sarima` ($74{,}0$ / $0{,}810$) | `linear` ($89{,}1$) | Nenhum modelo | `linear` (só MAE/MASE, +2,1%), `boosting` e `rede` |
+
+1. **Importância das features exógenas e de calendário:** em `store_total` e `FOODS`, todas as três classes da Task 2 (`linear`, `boosting` e `rede`) superam com grande margem tanto o `naive_sazonal` quanto o `SARIMA`. O ganho vem sobretudo da inclusão de `snap_CA`, dummies de mês/eventos e múltiplos lags sazonais ($\ge 28$), que capturam o ciclo mensal de compras que sobrava nos resíduos do SARIMA.
+2. **Parcimônia vs. complexidade (linear vs. não lineares):** com features bem construídas a partir do diagnóstico da Task 1, o modelo `linear` (OLS) teve o melhor desempenho global em `FOODS` e o menor RMSE em todas as três séries. Os modelos não lineares (`boosting` e `rede`) tiveram $R^2$ de treino muito superior ($\sim 0{,}94\text{–}0{,}95$ vs. $0{,}82\text{–}0{,}86$), trouxeram ganho em MAE/MASE no agregado da loja (`store_total` com `boosting`), mas sofreram maior variância fora da amostra nas séries mais ruidosas (`HOBBIES`).
