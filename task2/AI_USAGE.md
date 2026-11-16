@@ -39,12 +39,14 @@ O grupo revisou, executou e entendeu todo o código e o texto entregues, e respo
 - **Features (`features.py`):** montar a tabela da estratégia direta com calendário, eventos, SNAP, preço padronizado com o treino e lags de 28 dias ou mais. A tabela tem um `assert` que impede usar y da validação.
 - **Modelo linear (`linear.py`):** OLS por série, previsão dos 28 dias e figura de previsão.
 - **Texto:** primeira versão da seção da Task 2 no README, com a comparação do linear contra o naive sazonal e o SARIMA.
+- **Rede (`rede.py`):** Rede Neural MLP por série, previsão dos 28 dias.
 
 ## Prompts representativos
 1. "Leia os arquivos, o projeto e os enunciados para se ambientar e entender o que precisamos fazer."
 2. "Antes, você sugere que alteremos alguma coisa que herdamos da task1 para melhorar?"
 3. "Vamos fazer o modelo linear". A IA perguntou a regressão, a estratégia e as features; escolhemos OLS e a estratégia direta com lags ≥ 28, e pedimos a recomendação de features.
 4. "Now I want you to build a function boosting(train, val, cov) which fits a boosting model in this dataset, its a time series data type, so dont shuffle the datapoints." A IA montou a função "boosting()". 
+5. "Quero fazer a rede da Task 2. Com base no nosso `features.py` (31 colunas, ~1.830 linhas por série, estratégia direta), me diga qual tipo de rede usar e como definir os hiperparâmetros sem usar a validação, já que o enunciado proíbe escolher pelo erro dos 28 dias."
 
 
 
