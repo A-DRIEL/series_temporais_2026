@@ -15,6 +15,22 @@ Check público da Task 2 (padrão `--ate rede`; aceita `--ate linear` ou `--ate 
 python checks/check_task2.py --submission .
 ```
 
+## Figuras
+
+Todas as figuras ficam em `figuras/`, numa subpasta por etapa. As figuras dos modelos seguem o padrão `<modelo>_<tipo>_<série>.png`, por exemplo `linear_previsao_FOODS.png`.
+
+| Pasta | Conteúdo |
+|---|---|
+| `diagnostico/` | série no tempo com ACF/PACF (`diagnostico_*.png`) e ACF/PACF depois da diferença sazonal (`acf_pacf_dif7_*.png`) |
+| `baselines/` | previsões dos quatro baselines (`baselines_previsao_*.png`) |
+| `sarima/` | previsão (`sarima_previsao_*.png`) e resíduos no treino (`sarima_residuos_*.png`) |
+| `linear/` | previsão (`linear_previsao_*.png`) e resíduos no treino (`linear_residuos_*.png`) |
+| `boosting/` | previsão (`boosting_previsao_*.png`) e resíduos no treino (`boosting_residuos_*.png`) |
+| `rede/` | previsão (`rede_previsao_*.png`) e resíduos no treino (`rede_residuos_*.png`) |
+| `metricas/` | MAE, RMSE e MASE de todos os modelos na validação, um painel por série (`metricas_mae.png`, `metricas_rmse.png`, `metricas_mase.png`) |
+
+Um modelo novo salva as figuras na própria subpasta, com `pasta_figuras("<modelo>")` (definida em `config.py`), que cria a pasta se ela ainda não existir.
+
 # Task 1
 
 ## Diagnóstico dos dados
@@ -57,7 +73,7 @@ Ao executar `python main.py`, o projeto também grava `metricas.csv` com MAE, RM
 
 As quatro baselines exigidas (média, naive, naive sazonal e drift) foram calculadas para o horizonte de validação (28 dias) e estão consolidadas no arquivo `previsoes_validacao.csv`. 
 
-Analisando o comportamento das previsões geradas (`figuras/baselines_previsao_*.png`), os principais resultados observados foram:
+Analisando o comportamento das previsões geradas (`figuras/baselines/baselines_previsao_*.png`), os principais resultados observados foram:
 
 - **Naive Sazonal ($m=7$):** Como as três séries apresentam forte sazonalidade semanal, este foi, de longe, o baseline que apresentou o melhor resultado visual. Ele conseguiu reproduzir fielmente os ciclos de dias da semana (como os picos de fim de semana), acompanhando bem de perto a série de validação real.
 
@@ -98,11 +114,11 @@ O código está em `sarima.py`. O ajuste usa só o treino (até 2016-03-27), com
 
 ### Resíduos
 
-As figuras `figuras/sarima_residuos_*.png` mostram os resíduos e suas ACF/PACF. O Ljung-Box rejeita ruído branco nas três séries ($p \le 0{,}002$ em store_total, $p < 0{,}001$ em FOODS e $p = 0{,}022$ / $0{,}005$ nas defasagens $14$ / $28$ em HOBBIES), então os modelos não estão totalmente adequados. Em store_total e FOODS o que sobra é a autocorrelação nas defasagens $29\text{–}32$ (até $\sim 0{,}16$), o ciclo mensal já apontado no diagnóstico. Um SARIMA com $m = 7$ e sem regressores não consegue capturar esse ciclo. Em HOBBIES as autocorrelações que sobram são pequenas ($|\rho| < 0{,}07$) e sem padrão.
+As figuras `figuras/sarima/sarima_residuos_*.png` mostram os resíduos e suas ACF/PACF. O Ljung-Box rejeita ruído branco nas três séries ($p \le 0{,}002$ em store_total, $p < 0{,}001$ em FOODS e $p = 0{,}022$ / $0{,}005$ nas defasagens $14$ / $28$ em HOBBIES), então os modelos não estão totalmente adequados. Em store_total e FOODS o que sobra é a autocorrelação nas defasagens $29\text{–}32$ (até $\sim 0{,}16$), o ciclo mensal já apontado no diagnóstico. Um SARIMA com $m = 7$ e sem regressores não consegue capturar esse ciclo. Em HOBBIES as autocorrelações que sobram são pequenas ($|\rho| < 0{,}07$) e sem padrão.
 
 ### Previsão
 
-As figuras `figuras/sarima_previsao_*.png` mostram a previsão dos $28$ dias com intervalo de $95\%$ ao lado do realizado. As previsões são gravadas em `previsoes_validacao.csv` com `modelo = sarima`.
+As figuras `figuras/sarima/sarima_previsao_*.png` mostram a previsão dos $28$ dias com intervalo de $95\%$ ao lado do realizado. As previsões são gravadas em `previsoes_validacao.csv` com `modelo = sarima`.
 
 
 ## Comparação do modelo complexo com os quatro baselines
@@ -173,7 +189,7 @@ Cada série tem o próprio ajuste: `store_total`, `FOODS` e `HOBBIES` nunca est�
 
 ## `linear`
 
-Usamos regressão linear por mínimos quadrados (OLS, `sklearn.linear_model.LinearRegression`). O OLS **não tem hiperparâmetro**, então não há nada a escolher pela validação. O R² no treino é $0{,}856$ em store_total, $0{,}817$ em FOODS e $0{,}541$ em HOBBIES. As figuras `figuras/linear_previsao_*.png` mostram a previsão ao lado do realizado.
+Usamos regressão linear por mínimos quadrados (OLS, `sklearn.linear_model.LinearRegression`). O OLS **não tem hiperparâmetro**, então não há nada a escolher pela validação. O R² no treino é $0{,}856$ em store_total, $0{,}817$ em FOODS e $0{,}541$ em HOBBIES. As figuras `figuras/linear/linear_previsao_*.png` mostram a previsão ao lado do realizado.
 
 | Série | Métrica | linear | naive sazonal | SARIMA | linear vs. naive sazonal | linear vs. SARIMA |
 |---|---|---:|---:|---:|---:|---:|
@@ -191,7 +207,7 @@ Usamos regressão linear por mínimos quadrados (OLS, `sklearn.linear_model.Line
 - **Contra o SARIMA, em store_total e FOODS.** O linear ganha com folga, reduzindo o MAE em 37% e 45%. O SARIMA com $m = 7$ e sem regressores não enxerga o ciclo mensal; o linear recebe o SNAP, que pesa mais em alimentos, e o nível recente pelos lags.
 - **Em HOBBIES.** O linear perde para o SARIMA no MAE e no MASE (+2,1%) e ganha no RMSE (−6,5%), ou seja, erra menos nos dias de erro grande.
 - **O que muda em HOBBIES em relação a FOODS.** HOBBIES usa as mesmas colunas, mas com ajuste próprio e o preço da própria categoria. A série tem mais ruído e não tem ciclo mensal (diagnóstico da Task 1), então o SNAP ajuda pouco e o R² no treino é bem menor ($0{,}54$). O ganho do linear aqui vem quase todo do padrão semanal e do nível, que o SARIMA já capturava.
-- **Resíduos no treino (`figuras/linear_residuos_*.png`).** Os resíduos têm média zero nas três séries e desvio padrão de $373{,}4$ (`store_total`), $298{,}7$ (`FOODS`) e $83{,}0$ (`HOBBIES`). O teste de Ljung-Box rejeita ruído branco nas defasagens $14$ e $28$ ($p < 10^{-75}$ nas três séries), com ACF no lag $1$ de $\sim 0{,}36$ (`store_total`), $\sim 0{,}45$ (`FOODS`) e $\sim 0{,}24$ (`HOBBIES`). Isso é esperado na **estratégia direta** para $H = 28$: como o modelo só recebe lags $\ge 28$ dias (sem $y_{t-1}, \dots, y_{t-7}$), choques locais de uma semana para a seguinte permanecem correlacionados nos resíduos in-sample. Em compensação, a elevação mensal em torno das defasagens $28\text{–}32$ que aparecia nos resíduos do SARIMA cai bastante, já que o linear incorpora o `snap_CA` e as dummies de mês.
+- **Resíduos no treino (`figuras/linear/linear_residuos_*.png`).** Os resíduos têm média zero nas três séries e desvio padrão de $373{,}4$ (`store_total`), $298{,}7$ (`FOODS`) e $83{,}0$ (`HOBBIES`). O teste de Ljung-Box rejeita ruído branco nas defasagens $14$ e $28$ ($p < 10^{-75}$ nas três séries), com ACF no lag $1$ de $\sim 0{,}36$ (`store_total`), $\sim 0{,}45$ (`FOODS`) e $\sim 0{,}24$ (`HOBBIES`). Isso é esperado na **estratégia direta** para $H = 28$: como o modelo só recebe lags $\ge 28$ dias (sem $y_{t-1}, \dots, y_{t-7}$), choques locais de uma semana para a seguinte permanecem correlacionados nos resíduos in-sample. Em compensação, a elevação mensal em torno das defasagens $28\text{–}32$ que aparecia nos resíduos do SARIMA cai bastante, já que o linear incorpora o `snap_CA` e as dummies de mês.
 
 ## `boosting`
 
@@ -200,11 +216,11 @@ O código está em `boosting.py`. Usamos *gradient boosting* de árvores baseado
 ### Decisões e hiperparâmetros
 
 - **Hiperparâmetros fixados a priori:** mantivemos os valores padrão da biblioteca (`learning_rate = 0.1`, `max_iter = 100`, `max_leaf_nodes = 31`, `min_samples_leaf = 20`, perda quadrática), fixando `early_stopping=False` e `random_state=0`. Nenhum hiperparâmetro foi escolhido ou ajustado olhando o erro da validação. Desligar o `early_stopping` evita que o estimador separe internamente uma fração aleatória (embaralhada) do treino para parada antecipada.
-- **Ajuste e resíduos no treino (`figuras/boosting_residuos_*.png`):** por capturar interações não lineares entre dia da semana, mês, SNAP, eventos, preço e lags, o ajuste in-sample sobe para $R^2 = 0{,}953$ em `store_total` (desvio dos resíduos de $213{,}7$), $R^2 = 0{,}946$ em `FOODS` (desvio de $162{,}3$) e $R^2 = 0{,}855$ em `HOBBIES` (desvio de $46{,}7$). Na ACF/PACF dos resíduos, a autocorrelação residual cai drasticamente em relação ao modelo linear: o lag $1$ recua para $\sim 0{,}14$ (`store_total`), $\sim 0{,}17$ (`FOODS`) e $\sim 0{,}07$ (`HOBBIES`), e os múltiplos sazonais ($7, 14, 21$) ficam quase todos dentro da banda de confiança (embora o Ljung-Box ainda rejeite ruído branco a $5\%$, com $p(14) = 5{,}4 \times 10^{-11}$ em `store_total`, $1{,}9 \times 10^{-10}$ em `FOODS` e $0{,}0015$ em `HOBBIES`).
+- **Ajuste e resíduos no treino (`figuras/boosting/boosting_residuos_*.png`):** por capturar interações não lineares entre dia da semana, mês, SNAP, eventos, preço e lags, o ajuste in-sample sobe para $R^2 = 0{,}953$ em `store_total` (desvio dos resíduos de $213{,}7$), $R^2 = 0{,}946$ em `FOODS` (desvio de $162{,}3$) e $R^2 = 0{,}855$ em `HOBBIES` (desvio de $46{,}7$). Na ACF/PACF dos resíduos, a autocorrelação residual cai drasticamente em relação ao modelo linear: o lag $1$ recua para $\sim 0{,}14$ (`store_total`), $\sim 0{,}17$ (`FOODS`) e $\sim 0{,}07$ (`HOBBIES`), e os múltiplos sazonais ($7, 14, 21$) ficam quase todos dentro da banda de confiança (embora o Ljung-Box ainda rejeite ruído branco a $5\%$, com $p(14) = 5{,}4 \times 10^{-11}$ em `store_total`, $1{,}9 \times 10^{-10}$ em `FOODS` e $0{,}0015$ em `HOBBIES`).
 
 ### Resultados na validação
 
-As figuras `figuras/boosting_previsao_*.png` mostram a previsão dos $28$ dias ao lado do realizado.
+As figuras `figuras/boosting/boosting_previsao_*.png` mostram a previsão dos $28$ dias ao lado do realizado.
 
 | Série | Métrica | boosting | naive sazonal | SARIMA | linear | vs. naive sazonal | vs. SARIMA | vs. linear |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -231,11 +247,11 @@ O código está em `rede.py`. Usamos uma rede neural *Perceptron Multicamadas* (
 
 - **Arquitetura e regularização fixadas a priori:** duas camadas ocultas com `hidden_layer_sizes = (32, 16)`, função de ativação `relu`, penalização L2 `alpha = 1e-2`, `max_iter = 500` e `early_stopping = False`. Como a matriz de entrada tem $26$ colunas, a arquitetura em funil $(26 \to 32 \to 16 \to 1)$ tem capacidade moderada e usa regularização L2 para conter pesos grandes sem consultar a validação.
 - **Média de $5$ sementes (`SEMENTES = [0, 1, 2, 3, 4]`):** como o treinamento da MLP depende da inicialização aleatória dos pesos e da otimização estocástica (Adam), treinamos $5$ redes independentes com sementes fixadas a priori e tomamos a média das previsões no treino e na validação, reduzindo a variância do preditor.
-- **Ajuste e resíduos no treino (`figuras/rede_residuos_*.png`):** o $R^2$ no treino é $0{,}950$ em `store_total` (desvio dos resíduos de $219{,}5$), $0{,}939$ em `FOODS` (desvio de $172{,}4$) e $0{,}858$ em `HOBBIES` (desvio de $46{,}1$). Assim como no linear e no boosting, o Ljung-Box rejeita ruído branco nas defasagens $14$ e $28$ ($p < 10^{-6}$ nas três séries) por conta da autocorrelação de curto prazo no lag $1$ ($\sim 0{,}31$ em `store_total`, $\sim 0{,}37$ em `FOODS` e $\sim 0{,}10$ em `HOBBIES`), inerente ao horizonte direto de $28$ dias sem lags curtos.
+- **Ajuste e resíduos no treino (`figuras/rede/rede_residuos_*.png`):** o $R^2$ no treino é $0{,}950$ em `store_total` (desvio dos resíduos de $219{,}5$), $0{,}939$ em `FOODS` (desvio de $172{,}4$) e $0{,}858$ em `HOBBIES` (desvio de $46{,}1$). Assim como no linear e no boosting, o Ljung-Box rejeita ruído branco nas defasagens $14$ e $28$ ($p < 10^{-6}$ nas três séries) por conta da autocorrelação de curto prazo no lag $1$ ($\sim 0{,}31$ em `store_total`, $\sim 0{,}37$ em `FOODS` e $\sim 0{,}10$ em `HOBBIES`), inerente ao horizonte direto de $28$ dias sem lags curtos.
 
 ### Resultados na validação
 
-As figuras `figuras/rede_previsao_*.png` mostram a previsão da MLP ao lado do realizado.
+As figuras `figuras/rede/rede_previsao_*.png` mostram a previsão da MLP ao lado do realizado.
 
 | Série | Métrica | rede | naive sazonal | SARIMA | linear | boosting | vs. naive sazonal | vs. SARIMA |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
