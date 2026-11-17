@@ -4,9 +4,9 @@ from matplotlib.patches import Patch
 
 from config import pasta_figuras, SERIES
 
-MODELOS = ["media", "naive", "drift", "naive_sazonal", "sarima", "linear", "boosting", "rede"]
-MODELOS_TASK2 = {"linear", "boosting", "rede"}
-COR_TASK1, COR_TASK2 = "#a9a8a2", "#2a78d6"
+MODELOS = ["media", "naive", "drift", "naive_sazonal", "sarima", "sarimax", "linear", "boosting", "rede"]
+MODELOS_COM_COVARIAVEIS = {"sarimax", "linear", "boosting", "rede"}
+COR_SEM, COR_COM = "#a9a8a2", "#2a78d6"
 TEXTO, TEXTO_2, GRADE = "#0b0b0b", "#52514e", "#e4e3df"
 TITULOS = {
     "mae": "MAE na validação (28 dias), em unidades vendidas",
@@ -21,7 +21,7 @@ def plotar_metrica(metricas: pd.DataFrame, coluna: str) -> None:
     for ax, s in zip(eixos, SERIES):
         sub = metricas[metricas["series"] == s].set_index("modelo").reindex(MODELOS)
         valores = sub[coluna]
-        cores = [COR_TASK2 if m in MODELOS_TASK2 else COR_TASK1 for m in sub.index]
+        cores = [COR_COM if m in MODELOS_COM_COVARIAVEIS else COR_SEM for m in sub.index]
         ax.barh(range(len(sub)), valores, color=cores, height=0.7, edgecolor="white", linewidth=2)
         maximo = metricas[coluna].max() if mesma_escala else valores.max()
         formato = "{:.2f}" if mesma_escala else "{:.0f}"
@@ -43,7 +43,7 @@ def plotar_metrica(metricas: pd.DataFrame, coluna: str) -> None:
 
     eixos[0].set_yticks(range(len(MODELOS)), MODELOS)
     eixos[0].invert_yaxis()
-    fig.legend(handles=[Patch(color=COR_TASK1, label="Task 1"), Patch(color=COR_TASK2, label="Task 2")],
+    fig.legend(handles=[Patch(color=COR_SEM, label="sem covariáveis"), Patch(color=COR_COM, label="com covariáveis")],
                loc="upper right", frameon=False, ncol=2)
     fig.suptitle(TITULOS[coluna], x=0.01, ha="left", color=TEXTO, fontsize=12)
     fig.tight_layout(rect=(0, 0, 1, 0.93))

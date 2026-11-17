@@ -17,6 +17,7 @@ from metricas import salvar_metricas
 from sarima import comparar_ordens, sarima
 from rede import rede
 from grafico_metricas import plotar_metricas
+from sarimax import sarimax
 
 
 
@@ -42,7 +43,8 @@ def main() -> None:
     else:
         task1 = carregar_task1()
 
-    previsoes = pd.concat([task1, linear(treino, val, cov), boosting(treino, val, cov), rede(treino, val, cov)], ignore_index=True)
+    previsoes = pd.concat([task1, linear(treino, val, cov), boosting(treino, val, cov), rede(treino, val, cov),
+                           sarimax(treino, val, cov)], ignore_index=True)
 
     previsoes.to_csv(PREVISOES, index=False)
     metricas = salvar_metricas(treino, val, previsoes)
