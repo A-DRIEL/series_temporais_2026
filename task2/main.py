@@ -16,6 +16,8 @@ from linear import linear
 from metricas import salvar_metricas
 from sarima import comparar_ordens, sarima
 from rede import rede
+from grafico_metricas import plotar_metricas
+
 
 
 
@@ -44,6 +46,8 @@ def main() -> None:
 
     previsoes.to_csv(PREVISOES, index=False)
     metricas = salvar_metricas(treino, val, previsoes)
+    metricas = salvar_metricas(treino, val, previsoes)
+    plotar_metricas(metricas)
     print("\nMétricas na validação (menor é melhor):")
     for serie, grupo in metricas.groupby("series", sort=False):
         print(f"\n{serie}")
