@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 
-from config import FIG, H, M, SERIES, TRAIN_END
+from config import pasta_figuras, H, M, SERIES, TRAIN_END
 from features import montar_features
 from residuos import diagnosticar_residuos
 
@@ -17,12 +17,11 @@ def plotar_previsao(y: pd.Series, y_val: pd.Series, yhat: pd.Series, s: str) -> 
     ax.set_title(f"{s} — gradient boosting de árvores, estratégia direta")
     ax.legend(loc="upper left")
     fig.tight_layout()
-    fig.savefig(FIG / f"boosting_previsao_{s}.png", dpi=120)
+    fig.savefig(pasta_figuras("boosting") / f"boosting_previsao_{s}.png", dpi=120)
     plt.close(fig)
 
 
 def boosting(treino: pd.DataFrame, val: pd.DataFrame, cov: pd.DataFrame) -> pd.DataFrame:
-    FIG.mkdir(exist_ok=True)
     previsoes = []
     for s in SERIES:
         X_treino, y_z, X_val, mu, sd = montar_features(treino[s], cov, s)

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.patches import Patch
 
-from config import FIG, SERIES
+from config import pasta_figuras, SERIES
 
 MODELOS = ["media", "naive", "drift", "naive_sazonal", "sarima", "linear", "boosting", "rede"]
 MODELOS_TASK2 = {"linear", "boosting", "rede"}
@@ -47,11 +47,10 @@ def plotar_metrica(metricas: pd.DataFrame, coluna: str) -> None:
                loc="upper right", frameon=False, ncol=2)
     fig.suptitle(TITULOS[coluna], x=0.01, ha="left", color=TEXTO, fontsize=12)
     fig.tight_layout(rect=(0, 0, 1, 0.93))
-    fig.savefig(FIG / f"metricas_{coluna}.png", dpi=120)
+    fig.savefig(pasta_figuras("metricas") / f"metricas_{coluna}.png", dpi=120)
     plt.close(fig)
 
 
 def plotar_metricas(metricas: pd.DataFrame) -> None:
-    FIG.mkdir(exist_ok=True)
     for coluna in ("mae", "rmse", "mase"):
         plotar_metrica(metricas, coluna)

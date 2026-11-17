@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPRegressor
 
-from config import FIG, H, M, SERIES, TRAIN_END
+from config import pasta_figuras, H, M, SERIES, TRAIN_END
 from features import montar_features
 from residuos import diagnosticar_residuos
 
@@ -27,12 +27,11 @@ def plotar_previsao(y, y_val, yhat, s):
     ax.set_title(f"{s} — rede MLP (média de {len(SEMENTES)} sementes), estratégia direta")
     ax.legend(loc="upper left")
     fig.tight_layout()
-    fig.savefig(FIG / f"rede_previsao_{s}.png", dpi=120)
+    fig.savefig(pasta_figuras("rede") / f"rede_previsao_{s}.png", dpi=120)
     plt.close(fig)
 
 
 def rede(treino: pd.DataFrame, val: pd.DataFrame, cov: pd.DataFrame) -> pd.DataFrame:
-    FIG.mkdir(exist_ok=True)
     previsoes = []
     for s in SERIES:
         X_treino, y_z, X_val, mu, sd = montar_features(treino[s], cov, s)

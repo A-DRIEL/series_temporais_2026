@@ -2,7 +2,7 @@ import pandas as pd
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from config import FIG, H, M, SERIES, TRAIN_END
+from config import pasta_figuras, H, M, SERIES, TRAIN_END
 from carregar import limpar_natal
 from diagnostico_series import marcar_sazonais
 import matplotlib.pyplot as plt
@@ -61,7 +61,7 @@ def plotar_residuos(res, s: str, titulo: str) -> None:
     plot_pacf(resid, lags=35, ax=ax_pacf, zero=False, auto_ylims=True, method="ywm", title=f"PACF dos resíduos — {s}")
     marcar_sazonais(ax_pacf, 35)
     fig.tight_layout()
-    fig.savefig(FIG / f"sarima_residuos_{s}.png", dpi=120)
+    fig.savefig(pasta_figuras("sarima") / f"sarima_residuos_{s}.png", dpi=120)
     plt.close(fig)
 
 def plotar_previsao(y: pd.Series, y_val: pd.Series, prev, s: str, titulo: str) -> None:
@@ -76,12 +76,11 @@ def plotar_previsao(y: pd.Series, y_val: pd.Series, prev, s: str, titulo: str) -
     ax.set_title(f"{s} — {titulo}")
     ax.legend(loc="upper left")
     fig.tight_layout()
-    fig.savefig(FIG / f"sarima_previsao_{s}.png", dpi=120)
+    fig.savefig(pasta_figuras("sarima") / f"sarima_previsao_{s}.png", dpi=120)
     plt.close(fig)
 
 def sarima(treino: pd.DataFrame, val: pd.DataFrame) -> pd.DataFrame:
     """Ajusta um SARIMA por série só com o treino e devolve as previsões dos H dias seguintes (formato longo)."""
-    FIG.mkdir(exist_ok=True)
     previsoes = []
     for s in SERIES:
         ordem, sazonal = ORDENS[s]

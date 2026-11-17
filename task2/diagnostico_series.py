@@ -1,6 +1,6 @@
 import pandas as pd
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from config import FIG, M, SERIES
+from config import pasta_figuras, M, SERIES
 from carregar import limpar_natal
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller
@@ -15,7 +15,6 @@ def marcar_sazonais(ax, lags: int) -> None:
 
 
 def diagnostico(treino: pd.DataFrame) -> None:
-    FIG.mkdir(exist_ok=True)
     for s in SERIES:
         y = treino[s]
         fig = plt.figure(figsize=(12, 7))
@@ -33,7 +32,7 @@ def diagnostico(treino: pd.DataFrame) -> None:
         plot_pacf(y, lags=56, ax=ax_pacf, method="ywm", title=f"PACF — {s}")
         marcar_sazonais(ax_pacf, 56)
         fig.tight_layout()
-        fig.savefig(FIG / f"diagnostico_{s}.png", dpi=120)
+        fig.savefig(pasta_figuras("diagnostico") / f"diagnostico_{s}.png", dpi=120)
         plt.close(fig)
 
         # ACF/PACF depois da diferença sazonal: base da identificação do SARIMA
@@ -44,7 +43,7 @@ def diagnostico(treino: pd.DataFrame) -> None:
         plot_pacf(d7, lags=35, ax=axes[1], method="ywm", title=f"PACF de (1-B^7) {s}")
         marcar_sazonais(axes[1], 35)
         fig.tight_layout()
-        fig.savefig(FIG / f"acf_pacf_dif7_{s}.png", dpi=120)
+        fig.savefig(pasta_figuras("diagnostico") / f"acf_pacf_dif7_{s}.png", dpi=120)
         plt.close(fig)
 
         p_nivel = adfuller(limpar_natal(y))[1]

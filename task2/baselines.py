@@ -1,11 +1,10 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from config import SERIES, H, M, FIG, TRAIN_END
+from config import SERIES, H, M, pasta_figuras, TRAIN_END
 
 
 def plotar_previsoes_baselines(y_train, y_val, preds, s):
-    FIG.mkdir(exist_ok=True)
     fig, ax = plt.subplots(figsize=(12, 5))
     ax.plot(y_train.index[-8 * M:], y_train.values[-8 * M:], lw=1, color="C0", label="treino")
     ax.plot(y_val.index, y_val.values, lw=1.5, color="black", label="validação (real)")
@@ -25,7 +24,7 @@ def plotar_previsoes_baselines(y_train, y_val, preds, s):
     ax.set_title(f"Previsões Baselines — {s}")
     ax.legend(loc="upper left")
     fig.tight_layout()
-    fig.savefig(FIG / f"baselines_previsao_{s}.png", dpi=120)
+    fig.savefig(pasta_figuras("baselines") / f"baselines_previsao_{s}.png", dpi=120)
     plt.close(fig)
 
 

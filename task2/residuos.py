@@ -4,7 +4,7 @@ import pandas as pd
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.stats.diagnostic import acorr_ljungbox
 
-from config import FIG
+from config import pasta_figuras
 from diagnostico_series import marcar_sazonais
 
 
@@ -26,5 +26,5 @@ def diagnosticar_residuos(resid: pd.Series, s: str, modelo: str) -> None:
     plot_pacf(resid, lags=35, ax=ax_pacf, zero=False, auto_ylims=True, method="ywm", title=f"PACF dos resíduos — {s}")
     marcar_sazonais(ax_pacf, 35)
     fig.tight_layout()
-    fig.savefig(FIG / f"{modelo}_residuos_{s}.png", dpi=120)
+    fig.savefig(pasta_figuras(modelo) / f"{modelo}_residuos_{s}.png", dpi=120)
     plt.close(fig)

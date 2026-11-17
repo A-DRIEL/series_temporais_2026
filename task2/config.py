@@ -14,3 +14,9 @@ MODELOS_TASK1 = ["media", "naive", "naive_sazonal", "drift", "sarima"]
 # Estratégia direta: todo lag é >= H, então o lag de um dia da validação sempre cai no treino.
 LAGS = [28, 35, 42, 49]
 JANELA_MEDIA = (28, 55)  # média de y[t-28], ..., y[t-55]
+
+
+def pasta_figuras(nome: str) -> Path:
+    pasta = FIG / nome
+    pasta.mkdir(parents=True, exist_ok=True)
+    return pasta
